@@ -1,0 +1,113 @@
+How To Install and Configure Nextcloud with Apache on CentOS 7
+January 5, 2019
+
+Nextcloud is an open source, self-hosted file share and collaboration platform, similar to Dropbox. It comes bundled with media player, calendar and contact management.
+
+Nextcloud is extensible via apps and has desktop and mobile clients for all major platforms.
+
+This tutorial will walk you through the process of installing and configuring Nextcloud with Apache on a CentOS 7 system.
+
+Prerequisites
+
+Before starting with the tutorial, make sure you are logged in as a user with sudo privileges.
+
+Step 1: Creating MySQL Database
+
+NextCloud can use SQLite, PostgreSQL or MySQL database to store all its data.
+
+In this tutorial we will use MySQL as the database of choice.
+
+If you already don’t have MySQL or MariaDB installed on your CentOS server you can install by following one of the instructions below:
+
+Install MySQL on CentOS 7
+Install MariaDB on CentOS 7
+Start by logging to the MySQL shell by typing the following command:
+
+Run the following SQL statements to create a database named nextcloud, user named nextclouduser and to grant the necessary privileges to the user:
+
+CREATE DATABASE nextcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;GRANT ALL ON nextcloud.* TO 'nextclouduser'@'localhost' IDENTIFIED BY 'change-with-strong-password';FLUSH PRIVILEGES;EXIT;
+Copy
+Step 2: Installing PHP and Apache
+
+Nextcloud is a PHP application. CentOS 7 ships with PHP 5.4 which is not supported by Nextcloud.
+
+We will install PHP 7.2 from the Remi repository. The commands below will enable EPEL and Remi repositories:
+
+sudo yum install epel-release yum-utilssudo yum install http://rpms.remirepo.net/enterprise/remi-release-7.rpmsudo yum-config-manager --enable remi-php72
+Copy
+Once the repositories are enabled install Apache PHP 7.2 and all required PHP extensions with the following command:
+
+sudo yum install httpd php php-gd php-json php-mysql php-curl php-mbstring php-intl php-mcrypt php-imagick php-xml php-zip
+Copy
+Step 3: Configuring firewall
+
+If you are running Firewall on your CentOS server, you’ll need to open HTTP (80) and HTTPS (443) ports.
+
+You can do that by running the following commands:
+
+sudo firewall-cmd --permanent --zone=public --add-service=httpsudo firewall-cmd --permanent --zone=public --add-service=httpssudo firewall-cmd --reload
+Copy
+Step 4: Downloading Nextcloud
+
+Download the latest version of Nextcloud from the Nextcloud download page with wget:
+
+wget -P /tmp https://download.nextcloud.com/server/releases/nextcloud-15.0.0.zip
+Copy
+At the time of writing this article, the latest version of Nextcloud is version 15.0.0.
+
+Once the download is complete, extract the archive to the /var/www directory:
+
+sudo unzip /tmp/nextcloud-15.0.0.zip  -d /var/www
+Copy
+Set the correct ownership so that the Apache web server can have full access to the Nextcloud’s files and directories:
+
+sudo chown -R apache: /var/www/nextcloud
+Copy
+Step 5: Configure Apache
+
+Open your text editor and create the following Apache configuration file.
+
+sudo nano /etc/httpd/conf.d/nextcloud.conf
+Copy
+/etc/httpd/conf.d/nextcloud.conf
+
+Alias /nextcloud "/var/www/nextcloud/"
+
+<Directory /var/www/nextcloud/>
+  Options +FollowSymlinks
+  AllowOverride All
+
+ <IfModule mod_dav.c>
+  Dav off
+ </IfModule>
+
+ SetEnv HOME /var/www/nextcloud
+ SetEnv HTTP_HOME /var/www/nextcloud
+
+</Directory>
+Copy
+Activate the changes by restarting Apache service:
+
+sudo systemctl restart httpd
+Copy
+Step 6: Installing Nextcloud
+
+Now that Nextcloud is downloaded and all necessary services are configured open you browser and start the Nextcloud installation by visiting your server’s domain name or IP address followed by /nextcloud :
+
+http://domain_name_or_ip_address/nextcloud
+Copy
+You will be presented with the Nextcloud setup page.
+
+
+Enter your desired admin username and password and the MySQL user and database details you previously created.
+
+Click on the Finish setup button and once the installation process is completed you will be redirected to the Nextcloud dashboard logged in as admin user.
+
+
+Conclusion
+
+You have learned how to install and configure Nextcloud on your CentOS 7 machine. If you have a domain name associated with your Nextcloud server, you can follow this guide and secure your Apache with Let’s Encrypt.
+
+To find more information about how to manage your Nextcloud instance visit the Nextcloud documentation page.
+
+If you have any question, please leave a comment below.
